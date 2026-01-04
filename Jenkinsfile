@@ -15,7 +15,7 @@ pipeline  {
         stage ('Install Packages   SSH') {
             
             steps {
-                sshagent (credentials: ['AWS-SSH-KEY']) {
+                sshagent (credentials: ['jenkins-keys']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ec2-user@${TARGET_IP}  '
                         sudo yum install git -y; 
