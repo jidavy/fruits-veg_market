@@ -5,7 +5,7 @@ pipeline  {
     parameters {
         string (
             name: 'TARGET_IP',
-            defaultValue: '34.241.9.116',
+            defaultValue: '3.254.94.110',
             description: 'Enter  the traget EC2 IP address'
         )
     }
