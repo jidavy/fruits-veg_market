@@ -1,40 +1,56 @@
-pipeline  {
+pipeline {
     agent any 
     
     parameters {
         string (
-            name: 'PYTHON_NODE',
-            defaultValue: 'ec2-3-252-230-89.eu-west-1.compute.amazonaws.com',
-            description: 'Enter target EC2 Node for Python APP'
+            name: 'WEB_NODE',
+            defaultValue: '', 
+            description: 'Public IP or DNS of the Nginx Web Server'
         )
         string (
-            name: 'WEB_NODE',
-            defaultValue: 'ec2-3-252-230-89.eu-west-1.compute.amazonaws.com',
-            description: 'Enter target EC2 Node for Web APP'
+            name: 'PYTHON_NODE',
+            defaultValue: '', 
+            description: 'Public IP or DNS of the Python Backend (Port 8080)'
+        )
+        string (
+            name: 'JAVA_NODE',
+            defaultValue: '', 
+            description: 'Public IP or DNS of the Java Backend (Port 9090)'
         )
     }
     
     stages {
-        
-        stage ('Install Packages   SSH') {
-            
+        stage ('Deploy Frontend & Link Backends') {
             steps {
                 sshagent (credentials: ['AWS-SSH-KEY']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no  ec2-user@${WEB_NODE} '
-                        sudo yum install git -y; 
-                        sudo yum install nginx -y; 
+                        ssh -o StrictHostKeyChecking=no ec2-user@${params.WEB_NODE} '
+                        # 1. Install and Start Nginx (if not already handled by Packer)
+                        sudo yum install git nginx -y; 
                         sudo systemctl start nginx;
+                        sudo systemctl enable nginx;
+
+                        # 2. Refresh Code
                         cd ~;
                         rm -rf fruits-veg_market;
                         git clone https://github.com/techbleat/fruits-veg_market.git;
-                        cd fruits-veg_market/;
-                        sed 's/FRUIT_MACHINE/${PYTHON_NODE}/g' -i web/index.html
-                        sudo cp web/index.html /usr/share/nginx/html;
-' 
+                        
+                        # 3. Inject BOTH Backend IPs into index.html
+                        cd fruits-veg_market/web;
+                        
+                        # Replace FRUIT_MACHINE with the Python IP
+                        sed -i "s/FRUIT_MACHINE/${params.PYTHON_NODE}/g" index.html;
+                        
+                        # Replace VEG_MACHINE with the Java IP
+                        sed -i "s/VEG_MACHINE/${params.JAVA_NODE}/g" index.html;
+                        
+                        # 4. Deploy to Nginx HTML folder
+                        sudo cp index.html /usr/share/nginx/html/index.html;
+                        
+                        echo "Frontend successfully linked to Python (${params.PYTHON_NODE}) and Java (${params.JAVA_NODE})";
+                        ' 
                     """
                 }
-
             }
         }
     }
