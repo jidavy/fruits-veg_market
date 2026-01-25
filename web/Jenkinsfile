@@ -33,7 +33,7 @@ pipeline {
                         # 2. Refresh Code
                         cd ~;
                         rm -rf fruits-veg_market;
-                        git clone https://github.com/techbleat/fruits-veg_market.git;
+                        git clone https://github.com/jidavy/fruits-veg_market.git;
                         
                         # 3. Inject BOTH Backend IPs into index.html
                         cd fruits-veg_market/web;
