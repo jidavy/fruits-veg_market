@@ -18,7 +18,7 @@ pipeline {
         stage('Deploy & Build Java App') {
             steps {
                 // 'AWS-SSH-KEY' must be stored in Jenkins Credentials as 'SSH User with private key'
-                sshagent(credentials: ['AWS-SSH-KEY']) {
+                sshagent(credentials: ['jenkins-keys']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ec2-user@${params.TARGET_IP} '
                         # 1. Install Java 17 and Maven (Prerequisites)
