@@ -22,7 +22,7 @@ pipeline {
     stages {
         stage ('Deploy Frontend & Link Backends') {
             steps {
-                sshagent (credentials: ['AWS-SSH-KEY']) {
+                sshagent (credentials: ['jenkins-keys']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ec2-user@${params.WEB_NODE} '
                         # 1. Install and Start Nginx (if not already handled by Packer)
