@@ -1,39 +1,48 @@
-pipeline  {
+pipeline {
     agent any 
-    
     
     parameters {
         string (
             name: 'TARGET_IP',
-            defaultValue: '172.31.24.209',
-            description: 'Enter  the traget EC2 IP address'
+            defaultValue: '', // Best practice: Leave empty so you are forced to provide it
+            description: 'Enter the target EC2 IP address for Python Backend'
         )
     }
     
     stages {
-        
-        stage ('Install Packages   SSH') {
-            
+        stage ('Deploy Python App') {
             steps {
                 sshagent (credentials: ['AWS-SSH-KEY']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ec2-user@${TARGET_IP}  '
+                        ssh -o StrictHostKeyChecking=no ec2-user@${params.TARGET_IP} '
+                        # 1. Update and Install Git
                         sudo yum install git -y; 
+                        
+                        # 2. Clean and Clone
                         cd ~;
                         rm -rf fruits-veg_market;
                         git clone https://github.com/techbleat/fruits-veg_market.git;
+                        
+                        # 3. Virtual Environment Setup
                         cd fruits-veg_market/python;
                         python3 -m venv .venv;
                         source .venv/bin/activate;
+                        python -m pip install --upgrade pip;
                         python -m pip install -r requirements.txt;
-                        sudo cp fruits.service /etc/systemd/system/fruits.service;
-                        sudo systemctl  deamon-reload;
-                        sudo systemctl restart fruits.service 
                         
-' 
+                        # 4. Service Configuration
+                        sudo cp fruits.service /etc/systemd/system/fruits.service;
+                        
+                        # 5. Reload and Restart (Fixed typo: daemon-reload)
+                        sudo systemctl daemon-reload;
+                        sudo systemctl enable fruits.service;
+                        sudo systemctl restart fruits.service;
+                        
+                        # 6. Verify it is running
+                        sudo systemctl is-active fruits.service;
+                        ' 
                     """
                 }
-
             }
         }
     }
