@@ -21,7 +21,7 @@ pipeline {
                         # 2. Clean and Clone
                         cd ~;
                         rm -rf fruits-veg_market;
-                        git clone https://github.com/techbleat/fruits-veg_market.git;
+                        git clone https://github.com/jidavy/fruits-veg_market.git;
                         
                         # 3. Virtual Environment Setup
                         cd fruits-veg_market/python;
