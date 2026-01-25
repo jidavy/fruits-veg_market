@@ -1,0 +1,67 @@
+pipeline {
+    agent any 
+
+    parameters {
+        string(
+            name: 'TARGET_IP',
+            defaultValue: '', 
+            description: 'Enter the Target IP of the Java Backend Node (from Terraform output)'
+        )
+    }
+
+    environment {
+        // Replace with your actual Git URL if different
+        GIT_REPO = "https://github.com/jidavy/fruits-veg_market.git"
+    }
+
+    stages {
+        stage('Deploy & Build Java App') {
+            steps {
+                // 'AWS-SSH-KEY' must be stored in Jenkins Credentials as 'SSH User with private key'
+                sshagent(credentials: ['AWS-SSH-KEY']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@${params.TARGET_IP} '
+                        # 1. Install Java 17 and Maven (Prerequisites)
+                        sudo dnf update -y
+                        sudo dnf install git maven java-17-amazon-corretto -y
+                        
+                        # 2. Clean previous deployments
+                        cd ~
+                        rm -rf fruits-veg_market
+                        
+                        # 3. Clone the application code
+                        git clone ${GIT_REPO}
+                        
+                        # 4. Build the JAR file
+                        cd fruits-veg_market/java
+                        # We skip tests to speed up the pipeline in this lab environment
+                        mvn clean package -DskipTests
+                        
+                        # 5. Configure Systemd Service
+                        # This copies your vegetables.service to the system folder
+                        sudo cp vegetables.service /etc/systemd/system/vegetables.service
+                        
+                        # 6. Start the application
+                        sudo systemctl daemon-reload
+                        sudo systemctl enable vegetables.service
+                        sudo systemctl restart vegetables.service
+                        
+                        # 7. Verification
+                        echo "Deployment complete. Checking service status..."
+                        sudo systemctl is-active vegetables.service
+                        '
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Successfully deployed Java Backend to ${params.TARGET_IP}:9090"
+        }
+        failure {
+            echo "Deployment failed. Check Jenkins console logs and EC2 security groups."
+        }
+    }
+}
