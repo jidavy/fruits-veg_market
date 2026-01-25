@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage ('Deploy Python App') {
             steps {
-                sshagent (credentials: ['AWS-SSH-KEY']) {
+                sshagent (credentials: ['jenkins-keys']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ec2-user@${params.TARGET_IP} '
                         # 1. Update and Install Git
